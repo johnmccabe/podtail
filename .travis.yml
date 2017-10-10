@@ -1,0 +1,22 @@
+language: go
+
+go:
+  - 1.9.x
+
+jobs:
+  include:
+    - stage: Test and Build
+      script: go test ./...
+      script: make release
+
+deploy:
+  provider: releases
+  api_key:
+      secure: "U0V4wYwiC0cmtolglz3L9OT8g6hXWMHniQ+5nVv3D6M4rzitvWE1aDero/iGa9N9M1/i3xABnGxhzOm+T6CzGoq9KJHjz2LXUsO22AfQBFV4x+Wov+myAa0zOa2wum5clXI6M1Rqjt8DB08Yi8+IUKlvRzh18+og+Yje5S+KGag6i1UkHM34/lBy9ektQeWVyVNPMWG+gWQ19ntCczxp7dHDNGWUQeRH6p0PG/ThlQR96sycvE+QL+fxQBfPWAQp2hA1TSYUZDch9wAvxbKCupLvxe84iu/xhpI/a+BnAxxKt22YHByvdbXaYzyyU4duloODaqNFfEn9i9LqLMGmIgR4EvFqeDHJXBaiSFoBZ7bqKZZP3J6412Z4rj+u3br0jf/rajtkrdzHfpG/v/G4gRCpubZinWZ/KsodI5l+znh+WjSbzGhN06UI8/D6/3ZsfGnq1nCWC3siI6FDh9xVJWlfTnXF6kOYgpdUl64GCTdhnAfERwUI3o0ZbXfk1U7lh+EfnKCw26yyooDvpSB/7wqEbtsvi2osqNeosGwhtRrvoTLpqg555evGcp9qNW8VuP20xa6B4m5Wig2PA5o/aJSu5FrynBfvegzHpqZRhfxM/Yb+qVqWNASSvTG6RRA84cw6O0vmj7nCc1y4WpREdVRIWjYkedXaLlxNty05IqQ="
+  file: 
+  - podtail.tgz
+  - podtail-darwin.tgz
+  - podtail.exe
+  skip_cleanup: true
+  on:
+    tags: true
