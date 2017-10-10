@@ -1,4 +1,4 @@
-package main
+package commands
 
 import (
 	"bufio"
@@ -13,13 +13,53 @@ import (
 	"syscall"
 
 	"github.com/fatih/color"
+	"github.com/spf13/cobra"
 )
 
 const kubectl = "kubectl"
-const defaultSince = "10s"
-const defaultTail = "-1"
 
-func main() {
+var since string
+var tail string
+var regexType string
+var namespace string
+var context string
+var selector string
+var versionFlag bool
+var Version string
+
+// Execute TODO
+func Execute() {
+	rootCmd.Execute()
+}
+
+func init() {
+	rootCmd.PersistentFlags().StringVarP(&since, "since", "s", "10s", "Only return logs newer than a relative duration like 5s, 2m, or 3h.")
+	rootCmd.PersistentFlags().StringVar(&tail, "tail", "-1", "Lines of recent log file to display. -1 shows all lines.")
+	rootCmd.PersistentFlags().StringVarP(&regexType, "regex", "e", "substring", "The type of name matching to use (regex|substring).")
+	rootCmd.PersistentFlags().StringVarP(&namespace, "namespace", "n", "default", "The Kubernetes namespace where the pods are located.")
+	rootCmd.PersistentFlags().StringVarP(&context, "context", "t", "", "The k8s context. ex. int1-context. Relies on ~/.kube/config for the contexts.")
+	rootCmd.PersistentFlags().StringVarP(&selector, "selector", "l", "", "Label selector. If used the pod name is ignored.")
+	rootCmd.PersistentFlags().BoolVarP(&versionFlag, "version", "v", false, "Prints the kubetail version.")
+}
+
+var rootCmd = &cobra.Command{
+	Use:   "podtail SEARCH_TERM",
+	Short: "Tail Kubernetes logs from multiple pods at the same time",
+	Args:  cobra.MaximumNArgs(1),
+	Run:   runPodtail,
+}
+
+func runPodtail(cmd *cobra.Command, args []string) {
+
+	if versionFlag {
+		fmt.Println(Version)
+		os.Exit(0)
+	}
+
+	var searchTerm string
+	if len(args) > 0 {
+		searchTerm = args[0]
+	}
 
 	sigs := make(chan os.Signal, 1)
 	done := make(chan bool, 1)
@@ -28,10 +68,7 @@ func main() {
 
 	c := logColor{}
 
-	// Match pod prefix
-	pods, err := getPods("", "", "", "", "")
-	// Match pod via regex
-	// out, err := getPods("", "", "", ".*cont", "")
+	pods, err := getPods(searchTerm, context, namespace, selector, regexType)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -41,13 +78,18 @@ func main() {
 	for _, pod := range pods {
 		logColor := color.New(c.next())
 		logColor.Println(pod)
-		containers, err := getContainers(pod, "", "")
+		containers, err := getContainers(pod, context, namespace)
 		if err != nil {
 			log.Fatal(err)
 		}
 		for _, container := range containers {
-			tails = append(tails, func() { go tailContainer(pod, container, defaultSince, defaultTail, "", "", logColor) })
+			tails = append(tails, func() { go tailContainer(pod, container, since, tail, context, namespace, logColor) })
 		}
+	}
+
+	if len(tails) == 0 {
+		fmt.Println("No matching pods or containers detected. Exiting...")
+		os.Exit(0)
 	}
 
 	go func() {
@@ -57,13 +99,27 @@ func main() {
 		done <- true
 	}()
 
+	for _, tail := range tails {
+		tail()
+	}
+
 	<-done
 	fmt.Println("exiting...")
 }
 
-func getPods(pod, context, namespace, selector, pattern string) ([]string, error) {
+func getPods(searchTerm, context, namespace, selector, regexType string) ([]string, error) {
 	var args []string
 	var pods []string
+	var pattern string
+
+	switch regexType {
+	case "regex":
+		pattern = searchTerm
+	case "substring":
+	default:
+		fmt.Printf("Invalid regex type supplied: %s\n", regexType)
+		os.Exit(1)
+	}
 
 	args = append(args, []string{"get", "pods"}...)
 	args = append(args, fmt.Sprintf("--context=%x", context))
@@ -96,7 +152,7 @@ func getPods(pod, context, namespace, selector, pattern string) ([]string, error
 		}
 	} else {
 		for _, p := range pods {
-			if strings.Contains(p, pod) {
+			if strings.Contains(p, searchTerm) {
 				filtered = append(filtered, p)
 			}
 		}
