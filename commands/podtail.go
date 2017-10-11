@@ -240,13 +240,11 @@ var availableColours = [...]color.Attribute{
 	color.FgRed,
 	color.FgGreen,
 	color.FgYellow,
-	color.FgBlue,
 	color.FgMagenta,
 	color.FgCyan,
 	color.FgHiRed,
 	color.FgHiGreen,
 	color.FgHiYellow,
-	color.FgHiBlue,
 	color.FgHiMagenta,
 	color.FgHiCyan,
 }
