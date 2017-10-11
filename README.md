@@ -28,7 +28,7 @@ The following checklist details which flags/options are currently supported:
 Please raise an issue if theres an unimplemented flag you need support for.
 
 ## Installation
-Podtail currently wraps the `kubectl` command which you need to have installed and available on the path in order to use `podtail`.
+Podtail currently wraps the `kubectl` command which you need to have installed in order to use `podtail`.
 
 Please refer to the Kubernetes documentation for information on how to install `kubectl` for your specific OS.
 
@@ -49,6 +49,8 @@ Details of the support flags etc can be seen using the `--help` flag.
 
     podtail --help
 
+Note that if `kubectl` isn't on the path you can explicitly point to it with the `--kubectl` flag, also if your Kube cluster config isn't in the standard `~/.kube/config` location you can point to an explicit location with the `--kubeconfig` flag.
+
 Some example commands include:
 
     podtail my-pod-v1
@@ -57,3 +59,4 @@ Some example commands include:
     podtail -l service=my-service
     podtail --selector service=my-service --since 10m
     podtail --tail 1
+    podtail gateway --kubectl C:/Kubernetes/bin/kubectl --kubeconf ./myconfig
