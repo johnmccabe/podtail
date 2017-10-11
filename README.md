@@ -4,7 +4,7 @@
 
 Podtail is a Go port of Johan Haleby's [kubetail](https://github.com/johanhaleby/kubetail) utilty which now also allows Windows users to aggregate (tail/follow) logs from multiple pods into one stream.
 
-This is the same as running "kubectl logs -f <pod>" but for multiple pods.
+This is the same as running `kubectl logs -f <pod>` but for multiple pods.
 
 ## Compatibility with kubetail
 
@@ -41,7 +41,7 @@ You use Brew to install the client as follows:
 Just download `podtail.exe` from the [Github Releases]((https://github.com/johnmccabe/podtail/releases/) page and copy it to a location on your `%PATH%`.
 
 ### Linux
-Just download `podtail.tgz` from the [Github Releases]((https://github.com/johnmccabe/podtail/releases/) page, extract and copy it to a location on your `%PATH%`.
+Just download `podtail.tgz` from the [Github Releases]((https://github.com/johnmccabe/podtail/releases/) page, extract and copy it to a location on your `$PATH`.
 
 
 ## Usage
