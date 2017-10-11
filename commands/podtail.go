@@ -25,9 +25,11 @@ var namespace string
 var context string
 var selector string
 var versionFlag bool
+
+// Version of the podtail binary
 var Version string
 
-// Execute TODO
+// Execute initialises Cobra
 func Execute() {
 	rootCmd.Execute()
 }
