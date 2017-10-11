@@ -1,6 +1,8 @@
 # Podtail
 
 [![Build Status](https://travis-ci.org/johnmccabe/podtail.svg "Travis CI status")](https://travis-ci.org/johnmccabe/podtail)
+[![Go Report Card](https://goreportcard.com/badge/github.com/johnmccabe/podtail)](https://goreportcard.com/report/github.com/johnmccabe/podtail)
+[![GitHub (pre-)release](https://img.shields.io/github/release/johnmccabe/podtail/all.svg)](https://github.com/johnmccabe/podtail/releases)
 
 Podtail is a Go port of Johan Haleby's [kubetail](https://github.com/johanhaleby/kubetail) utilty which now also allows Windows users to aggregate (tail/follow) logs from multiple pods into one stream.
 
