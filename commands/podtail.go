@@ -249,11 +249,8 @@ func tailContainer(pod, container, since, tail, context, namespace string, logCo
 		fmt.Printf("error creating tail stdout pipe: %v\n", err)
 		return err
 	}
-	var stderr bytes.Buffer
-	cmd.Stdout = &stderr
 	if err := cmd.Start(); err != nil {
 		fmt.Printf("error running: %s\n", strings.Join(cmd.Args, " "))
-		fmt.Println(stderr.String())
 		return err
 	}
 
