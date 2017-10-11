@@ -23,7 +23,7 @@ The following checklist details which flags/options are currently supported:
 - [ ] `-j, --jq`
 - [x] `-k, --colored-output`
 - [ ] `-z, --skip-colors`
-- [ ] `--timestamps`
+- [x] `--timestamps`
 - [x] `--tail`
 - [x] `-v, --version`
 

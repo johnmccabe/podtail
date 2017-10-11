@@ -25,6 +25,7 @@ var context string
 var selector string
 var versionFlag bool
 var coloredOutput string
+var timestampsFlag bool
 var kubeconfig string
 var kubectl string
 
@@ -45,6 +46,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&selector, "selector", "l", "", "Label selector. If used the pod name is ignored.")
 	rootCmd.PersistentFlags().BoolVarP(&versionFlag, "version", "v", false, "Prints the kubetail version.")
 	rootCmd.PersistentFlags().StringVarP(&coloredOutput, "colored-output", "k", "line", "Use colored output (pod|line|false). pod = only color pod name, line = color entire line, false = don't use any colors.")
+	rootCmd.PersistentFlags().BoolVar(&timestampsFlag, "timestamps", false, "Include timestamps on each line in the log output.")
 
 	// Flags to enable running with kubectl config and binaries in non-standard locations,
 	// these flags do not have equivalents in kubetail.
@@ -140,7 +142,7 @@ func runPodtail(cmd *cobra.Command, args []string) {
 	}()
 
 	for _, t := range tails {
-		go tailContainer(t.pod, t.container, t.since, t.tail, t.context, t.namespace, t.coloredOutput, t.logColor)
+		go tailContainer(t.pod, t.container, t.since, t.tail, t.context, t.namespace, t.coloredOutput, t.logColor, timestampsFlag)
 	}
 
 	<-done
@@ -239,7 +241,7 @@ func getContainers(pod, context, namespace string) ([]string, error) {
 	return containers, nil
 }
 
-func tailContainer(pod, container, since, tail, context, namespace string, coloredOutput string, logColor *color.Color) error {
+func tailContainer(pod, container, since, tail, context, namespace string, coloredOutput string, logColor *color.Color, timestamps bool) error {
 	var args []string
 
 	args = append(args, fmt.Sprintf("--context=%s", context))
@@ -247,6 +249,7 @@ func tailContainer(pod, container, since, tail, context, namespace string, color
 	args = append(args, fmt.Sprintf("--since=%s", since))
 	args = append(args, fmt.Sprintf("--tail=%s", tail))
 	args = append(args, fmt.Sprintf("--namespace=%s", namespace))
+	args = append(args, fmt.Sprintf("--timestamps=%t", timestamps))
 
 	if len(kubeconfig) > 0 {
 		args = append(args, fmt.Sprintf("--kubeconfig=%s", kubeconfig))
