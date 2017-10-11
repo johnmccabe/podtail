@@ -2,8 +2,14 @@ ifndef GOPATH
 $(error GOPATH is not set)
 endif
 
+SHELL  := env TRAVIS_TAG=$(TRAVIS_TAG) $(SHELL)
+TRAVIS_TAG ?= dev
+
+PACKAGE_NAME = github.com/johnmccabe/podtail
+LDFLAGS += -X "$(PACKAGE_NAME)/commands.Version=$(TRAVIS_TAG)"
+LDFLAGS += -s -w
+
 GOARCH ?= amd64
-LDFLAGS ?= -s -w
 
 all: clean build
 
