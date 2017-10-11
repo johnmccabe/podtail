@@ -24,6 +24,7 @@ var namespace string
 var context string
 var selector string
 var versionFlag bool
+var coloredOutput string
 var kubeconfig string
 var kubectl string
 
@@ -43,6 +44,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&context, "context", "t", "", "The k8s context. ex. int1-context. Relies on ~/.kube/config for the contexts.")
 	rootCmd.PersistentFlags().StringVarP(&selector, "selector", "l", "", "Label selector. If used the pod name is ignored.")
 	rootCmd.PersistentFlags().BoolVarP(&versionFlag, "version", "v", false, "Prints the kubetail version.")
+	rootCmd.PersistentFlags().StringVarP(&coloredOutput, "colored-output", "k", "line", "Use colored output (pod|line|false). pod = only color pod name, line = color entire line, false = don't use any colors.")
 
 	// Flags to enable running with kubectl config and binaries in non-standard locations,
 	// these flags do not have equivalents in kubetail.
@@ -62,13 +64,14 @@ var rootCmd = &cobra.Command{
 }
 
 type tailInfo struct {
-	pod       string
-	container string
-	since     string
-	tail      string
-	context   string
-	namespace string
-	logColor  *color.Color
+	pod           string
+	container     string
+	since         string
+	tail          string
+	context       string
+	namespace     string
+	coloredOutput string
+	logColor      *color.Color
 }
 
 func runPodtail(cmd *cobra.Command, args []string) {
@@ -99,20 +102,26 @@ func runPodtail(cmd *cobra.Command, args []string) {
 
 	for _, pod := range pods {
 		logColor := color.New(c.next())
-		logColor.Println(pod)
+		if coloredOutput == "false" {
+			fmt.Println(pod)
+		} else {
+			logColor.Println(pod)
+		}
+
 		containers, err := getContainers(pod, context, namespace)
 		if err != nil {
 			log.Fatal(err)
 		}
 		for _, container := range containers {
 			t := tailInfo{
-				pod:       pod,
-				container: container,
-				since:     since,
-				tail:      tail,
-				context:   context,
-				namespace: namespace,
-				logColor:  logColor,
+				pod:           pod,
+				container:     container,
+				since:         since,
+				tail:          tail,
+				context:       context,
+				namespace:     namespace,
+				logColor:      logColor,
+				coloredOutput: coloredOutput,
 			}
 			tails = append(tails, t)
 		}
@@ -131,7 +140,7 @@ func runPodtail(cmd *cobra.Command, args []string) {
 	}()
 
 	for _, t := range tails {
-		go tailContainer(t.pod, t.container, t.since, t.tail, t.context, t.namespace, t.logColor)
+		go tailContainer(t.pod, t.container, t.since, t.tail, t.context, t.namespace, t.coloredOutput, t.logColor)
 	}
 
 	<-done
@@ -230,7 +239,7 @@ func getContainers(pod, context, namespace string) ([]string, error) {
 	return containers, nil
 }
 
-func tailContainer(pod, container, since, tail, context, namespace string, logColor *color.Color) error {
+func tailContainer(pod, container, since, tail, context, namespace string, coloredOutput string, logColor *color.Color) error {
 	var args []string
 
 	args = append(args, fmt.Sprintf("--context=%s", context))
@@ -256,10 +265,23 @@ func tailContainer(pod, container, since, tail, context, namespace string, logCo
 
 	scanner := bufio.NewScanner(out)
 	for scanner.Scan() {
-		logColor.Printf("[%s] %s\n", pod, scanner.Text())
+		printLine(pod, scanner.Text(), coloredOutput, logColor)
 	}
 
 	return nil
+}
+
+func printLine(pod, text, coloredOutput string, logColor *color.Color) {
+	switch coloredOutput {
+	case "pod":
+		logColor.Printf("[%s] ", pod)
+		fmt.Println(text)
+	case "false":
+		fmt.Printf("[%s] %s\n", pod, text)
+	default:
+		logColor.Printf("[%s] %s\n", pod, text)
+	}
+	// pod|line|false
 }
 
 var availableColours = [...]color.Attribute{

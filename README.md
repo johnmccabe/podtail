@@ -21,7 +21,7 @@ The following checklist details which flags/options are currently supported:
 - [ ] `-b, --line-buffered`
 - [x] `-e, --regex`
 - [ ] `-j, --jq`
-- [ ] `-k, --colored-output`
+- [x] `-k, --colored-output`
 - [ ] `-z, --skip-colors`
 - [ ] `--timestamps`
 - [x] `--tail`
