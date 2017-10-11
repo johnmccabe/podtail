@@ -61,6 +61,16 @@ var rootCmd = &cobra.Command{
 	Run:   runPodtail,
 }
 
+type tailInfo struct {
+	pod       string
+	container string
+	since     string
+	tail      string
+	context   string
+	namespace string
+	logColor  *color.Color
+}
+
 func runPodtail(cmd *cobra.Command, args []string) {
 
 	if versionFlag {
@@ -85,7 +95,7 @@ func runPodtail(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 
-	tails := []func(){}
+	tails := []tailInfo{}
 
 	for _, pod := range pods {
 		logColor := color.New(c.next())
@@ -95,7 +105,16 @@ func runPodtail(cmd *cobra.Command, args []string) {
 			log.Fatal(err)
 		}
 		for _, container := range containers {
-			tails = append(tails, func() { go tailContainer(pod, container, since, tail, context, namespace, logColor) })
+			t := tailInfo{
+				pod:       pod,
+				container: container,
+				since:     since,
+				tail:      tail,
+				context:   context,
+				namespace: namespace,
+				logColor:  logColor,
+			}
+			tails = append(tails, t)
 		}
 	}
 
@@ -111,8 +130,9 @@ func runPodtail(cmd *cobra.Command, args []string) {
 		done <- true
 	}()
 
-	for _, tail := range tails {
-		tail()
+	for _, t := range tails {
+		log.Printf("Starting tail: %v\n", tail)
+		go tailContainer(t.pod, t.container, t.since, t.tail, t.context, t.namespace, t.logColor)
 	}
 
 	<-done
