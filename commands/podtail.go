@@ -131,7 +131,6 @@ func runPodtail(cmd *cobra.Command, args []string) {
 	}()
 
 	for _, t := range tails {
-		log.Printf("Starting tail: %v\n", tail)
 		go tailContainer(t.pod, t.container, t.since, t.tail, t.context, t.namespace, t.logColor)
 	}
 
