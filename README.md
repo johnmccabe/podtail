@@ -33,15 +33,15 @@ Podtail currently wraps the `kubectl` command which you need to have installed i
 Please refer to the Kubernetes documentation for information on how to install `kubectl` for your specific OS.
 
 ### OSX
-Just download `podtail-darwin.tgz` from the [Github Releases]((https://github.com/johnmccabe/podtail/releases/) page, extract, rename it to `podtail` and copy it to a location on your `$PATH`.
+You use Brew to install the client as follows:
 
-Homebrew is coming ASAP.
+    $ brew tap johnmccabe/podtail && brew install podtail
 
 ### Windows
-Just download `podtail.exe` from the [Github Releases]((https://github.com/johnmccabe/podtail/releases/) page and copy it to a location on your `%PATH%`.
+Just download `podtail.exe` from the [Github Releases](https://github.com/johnmccabe/podtail/releases/) page and copy it to a location on your `%PATH%`.
 
 ### Linux
-Just download `podtail.tgz` from the [Github Releases]((https://github.com/johnmccabe/podtail/releases/) page, extract and copy it to a location on your `$PATH`.
+Just download `podtail.tgz` from the [Github Releases](https://github.com/johnmccabe/podtail/releases/) page, extract and copy it to a location on your `$PATH`.
 
 
 ## Usage
