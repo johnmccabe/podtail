@@ -9,14 +9,13 @@ import (
 	"os/exec"
 	"os/signal"
 	"regexp"
+	"runtime"
 	"strings"
 	"syscall"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
-
-const kubectl = "kubectl"
 
 var since string
 var tail string
@@ -25,6 +24,8 @@ var namespace string
 var context string
 var selector string
 var versionFlag bool
+var kubeconfig string
+var kubectl string
 
 // Version of the podtail binary
 var Version string
@@ -42,6 +43,15 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&context, "context", "t", "", "The k8s context. ex. int1-context. Relies on ~/.kube/config for the contexts.")
 	rootCmd.PersistentFlags().StringVarP(&selector, "selector", "l", "", "Label selector. If used the pod name is ignored.")
 	rootCmd.PersistentFlags().BoolVarP(&versionFlag, "version", "v", false, "Prints the kubetail version.")
+
+	// Flags to enable running with kubectl config and binaries in non-standard locations,
+	// these flags do not have equivalents in kubetail.
+	rootCmd.PersistentFlags().StringVar(&kubeconfig, "kubeconfig", "", "Path to the kubeconfig file.")
+	defaultKubectl := "kubectl"
+	if runtime.GOOS == "windows" {
+		defaultKubectl = "kubectl.exe"
+	}
+	rootCmd.PersistentFlags().StringVar(&kubectl, "kubectl", defaultKubectl, "Path to the kubectl executable. Override with an explicit path if necessary.")
 }
 
 var rootCmd = &cobra.Command{
@@ -125,13 +135,16 @@ func getPods(searchTerm, context, namespace, selector, regexType string) ([]stri
 
 	args = append(args, []string{"get", "pods"}...)
 	args = append(args, fmt.Sprintf("--context=%x", context))
+	args = append(args, fmt.Sprintf("--namespace=%s", namespace))
+	args = append(args, "--output=jsonpath={.items[*].metadata.name}")
 
 	if len(selector) > 0 {
 		args = append(args, []string{"--selector", selector}...)
 	}
 
-	args = append(args, fmt.Sprintf("--namespace=%s", namespace))
-	args = append(args, "--output=jsonpath={.items[*].metadata.name}")
+	if len(kubeconfig) > 0 {
+		args = append(args, fmt.Sprintf("--kubeconfig=%s", kubeconfig))
+	}
 
 	cmd := exec.Command(kubectl, args...)
 
@@ -139,6 +152,7 @@ func getPods(searchTerm, context, namespace, selector, regexType string) ([]stri
 	cmd.Stdout = &out
 	err := cmd.Run()
 	if err != nil {
+		fmt.Printf("Error running: %v", cmd)
 		return nil, err
 	}
 
@@ -172,12 +186,17 @@ func getContainers(pod, context, namespace string) ([]string, error) {
 	args = append(args, fmt.Sprintf("--namespace=%s", namespace))
 	args = append(args, "--output=jsonpath={.spec.containers[*].name}")
 
+	if len(kubeconfig) > 0 {
+		args = append(args, fmt.Sprintf("--kubeconfig=%s", kubeconfig))
+	}
+
 	cmd := exec.Command(kubectl, args...)
 
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	err := cmd.Run()
 	if err != nil {
+		fmt.Printf("Error running: %v", cmd)
 		return nil, err
 	}
 
@@ -195,9 +214,14 @@ func tailContainer(pod, container, since, tail, context, namespace string, logCo
 	args = append(args, fmt.Sprintf("--tail=%s", tail))
 	args = append(args, fmt.Sprintf("--namespace=%s", namespace))
 
+	if len(kubeconfig) > 0 {
+		args = append(args, fmt.Sprintf("--kubeconfig=%s", kubeconfig))
+	}
+
 	cmd := exec.Command(kubectl, args...)
 	out, err := cmd.StdoutPipe()
 	if err != nil {
+		fmt.Printf("Error running: %v", cmd)
 		return err
 	}
 	if err := cmd.Start(); err != nil {
