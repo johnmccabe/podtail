@@ -154,7 +154,7 @@ func getPods(searchTerm, context, namespace, selector, regexType string) ([]stri
 	}
 
 	args = append(args, []string{"get", "pods"}...)
-	args = append(args, fmt.Sprintf("--context=%x", context))
+	args = append(args, fmt.Sprintf("--context=%s", context))
 	args = append(args, fmt.Sprintf("--namespace=%s", namespace))
 	args = append(args, "--output=jsonpath={.items[*].metadata.name}")
 
@@ -168,15 +168,18 @@ func getPods(searchTerm, context, namespace, selector, regexType string) ([]stri
 
 	cmd := exec.Command(kubectl, args...)
 
-	var out bytes.Buffer
-	cmd.Stdout = &out
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
 	err := cmd.Run()
 	if err != nil {
-		fmt.Printf("Error running: %v", cmd)
+		fmt.Printf("error running: %s\n", strings.Join(cmd.Args, " "))
+		fmt.Println(stderr.String())
 		return nil, err
 	}
 
-	pods = strings.Split(out.String(), " ")
+	pods = strings.Split(stdout.String(), " ")
 	filtered := pods[:0]
 
 	if len(pattern) > 0 {
@@ -202,7 +205,7 @@ func getContainers(pod, context, namespace string) ([]string, error) {
 	var containers []string
 
 	args = append(args, []string{"get", "pod", pod}...)
-	args = append(args, fmt.Sprintf("--context=%x", context))
+	args = append(args, fmt.Sprintf("--context=%s", context))
 	args = append(args, fmt.Sprintf("--namespace=%s", namespace))
 	args = append(args, "--output=jsonpath={.spec.containers[*].name}")
 
@@ -212,15 +215,18 @@ func getContainers(pod, context, namespace string) ([]string, error) {
 
 	cmd := exec.Command(kubectl, args...)
 
-	var out bytes.Buffer
-	cmd.Stdout = &out
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
 	err := cmd.Run()
 	if err != nil {
-		fmt.Printf("Error running: %v", cmd)
+		fmt.Printf("error running: %s\n", strings.Join(cmd.Args, " "))
+		fmt.Println(stderr.String())
 		return nil, err
 	}
 
-	containers = strings.Split(out.String(), " ")
+	containers = strings.Split(stdout.String(), " ")
 
 	return containers, nil
 }
@@ -228,7 +234,7 @@ func getContainers(pod, context, namespace string) ([]string, error) {
 func tailContainer(pod, container, since, tail, context, namespace string, logColor *color.Color) error {
 	var args []string
 
-	args = append(args, fmt.Sprintf("--context=%x", context))
+	args = append(args, fmt.Sprintf("--context=%s", context))
 	args = append(args, "logs", pod, container, "-f")
 	args = append(args, fmt.Sprintf("--since=%s", since))
 	args = append(args, fmt.Sprintf("--tail=%s", tail))
@@ -241,11 +247,15 @@ func tailContainer(pod, container, since, tail, context, namespace string, logCo
 	cmd := exec.Command(kubectl, args...)
 	out, err := cmd.StdoutPipe()
 	if err != nil {
-		fmt.Printf("Error running: %v", cmd)
+		fmt.Printf("error creating tail stdout pipe: %v\n", err)
 		return err
 	}
+	var stderr bytes.Buffer
+	cmd.Stdout = &stderr
 	if err := cmd.Start(); err != nil {
-		log.Fatal(err)
+		fmt.Printf("error running: %s\n", strings.Join(cmd.Args, " "))
+		fmt.Println(stderr.String())
+		return err
 	}
 
 	scanner := bufio.NewScanner(out)
